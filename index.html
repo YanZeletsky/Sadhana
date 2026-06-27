@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Кундалини трекер</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            color: #1e1e1e;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .app {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 90vh;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 20px 10px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .heart-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0faf0;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            color: #2E7D32;
+        }
+        .heart-counter .heart-icon {
+            font-size: 20px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab.active {
+            color: #2E7D32;
+            border-bottom: 2px solid #2E7D32;
+        }
+        .view {
+            display: none;
+            padding: 16px 20px 24px;
+            flex: 1;
+        }
+        .view.active {
+            display: block;
+        }
+        .practice-card {
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .practice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+        .practice-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .practice-target {
+            font-size: 13px;
+            color: #666;
+        }
+        .progress-bar {
+            height: 12px;
+            background: #e9e9e9;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #2E7D32);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 6px;
+        }
+        .add-btn {
+            background: #f5f5f5;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2E7D32;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .add-btn:active {
+            background: #e0e0e0;
+        }
+        /* модальное окно */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 10;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 24px 24px 0 0;
+            padding: 24px 20px 30px;
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .modal h3 {
+            margin-bottom: 16px;
+        }
+        .quick-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .quick-btn {
+            background: #e8f5e9;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: #2E7D32;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .manual-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 16px 0;
+        }
+        .manual-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .submit-btn {
+            background: #2E7D32;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        /* анимация сердца */
+        .flying-heart {
+            position: fixed;
+            font-size: 28px;
+            z-index: 20;
+            pointer-events: none;
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.8s;
+        }
+        /* статистика */
+        .stats-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .period-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .period-btn.active {
+            background: #2E7D32;
+            color: white;
+            border-color: #2E7D32;
+        }
+        .week-chart {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 160px;
+            margin-top: 20px;
+        }
+        .bar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .bar {
+            width: 24px;
+            background: #c8e6c9;
+            border-radius: 6px 6px 0 0;
+            transition: height 0.4s;
+        }
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+        .month-cell {
+            padding: 8px 2px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header>
+        <h1>Кундалини</h1>
+        <div class="heart-counter">
+            <span class="heart-icon">💚</span>
+            <span id="totalHearts">0</span>
+        </div>
+    </header>
+    <div class="tabs">
+        <div class="tab active" data-view="today">Сегодня</div>
+        <div class="tab" data-view="stats">Статистика</div>
+    </div>
+
+    <!-- Сегодня -->
+    <div id="todayView" class="view active">
+        <div id="practiceList"></div>
+    </div>
+
+    <!-- Статистика -->
+    <div id="statsView" class="view">
+        <div class="stats-header">
+            <button class="period-btn active" data-period="day">День</button>
+            <button class="period-btn" data-period="week">Неделя</button>
+            <button class="period-btn" data-period="month">Месяц</button>
+        </div>
+        <div id="statsContent"></div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <h3 id="modalTitle"></h3>
+        <div id="modalQuickBtns" class="quick-btns"></div>
+        <div class="manual-input">
+            <input type="number" id="manualValue" placeholder="0" min="0">
+            <span id="unitLabel"></span>
+        </div>
+        <button class="submit-btn" id="submitAdd">Добавить</button>
+        <button style="background:none; border:none; margin-top:10px; color:#888; width:100%;" id="closeModal">Отмена</button>
+    </div>
+</div>
+
+<script>
+    // ========== Регистрация Service Worker ==========
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+    }
+
+    // ========== База данных IndexedDB ==========
+    const DB_NAME = 'kundaliniTracker';
+    const DB_VERSION = 1;
+    let db;
+
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('dailyProgress')) {
+                    const store = db.createObjectStore('dailyProgress', { keyPath: 'date' });
+                    store.createIndex('dateIdx', 'date', { unique: true });
+                }
+                if (!db.objectStoreNames.contains('totalHearts')) {
+                    db.createObjectStore('totalHearts', { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    function getTodayDate() {
+        const d = new Date();
+        return d.toISOString().slice(0,10);
+    }
+
+    async function getDailyProgress(date) {
+        const tx = db.transaction('dailyProgress', 'readonly');
+        const store = tx.objectStore('dailyProgress');
+        const record = await new Promise(res => {
+            const req = store.get(date);
+            req.onsuccess = () => res(req.result);
+        });
+        return record || {
+            date,
+            practices: {
+                fireBreath: { done: 0 },
+                deepBreath: { done: 0 },
+                sabhang: { done: 0 },
+                satNam: { done: 0 }
+            },
+            heartsEarned: {
+                fireBreath: false,
+                deepBreath: false,
+                sabhang: false,
+                satNam: false
+            }
+        };
+    }
+
+    async function saveDailyProgress(progress) {
+        const tx = db.transaction('dailyProgress', 'readwrite');
+        const store = tx.objectStore('dailyProgress');
+        store.put(progress);
+        return new Promise(res => tx.oncomplete = res);
+    }
+
+    async function getTotalHearts() {
+        const tx = db.transaction('totalHearts', 'readonly');
+        const store = tx.objectStore('totalHearts');
+        const rec = await new Promise(res => {
+            store.get('counter').onsuccess = e => res(e.target.result);
+        });
+        return rec ? rec.value : 0;
+    }
+
+    async function incrementTotalHearts() {
+        const tx = db.transaction('totalHearts', 'readwrite');
+        const store = tx.objectStore('totalHearts');
+        const rec = await new Promise(res => {
+            store.get('counter').onsuccess = e => res(e.target.result);
+        });
+        const newVal = (rec ? rec.value : 0) + 1;
+        store.put({ id: 'counter', value: newVal });
+        await new Promise(res => tx.oncomplete = res);
+        return newVal;
+    }
+
+    // ========== Конфигурация практик ==========
+    const practices = [
+        { key: 'fireBreath', name: 'Дыхание огня', target: 20, unit: 'мин', type: 'time' },
+        { key: 'deepBreath', name: 'Глубокое медленное дыхание', target: 90, unit: 'мин', type: 'time' },
+        { key: 'sabhang', name: 'Сабханг Дандэ Крийя', target: 54, unit: 'повторов', type: 'reps' },
+        { key: 'satNam', name: 'Сат Нам Расаян', target: 240, unit: 'мин', type: 'time' }
+    ];
+
+    let currentModalPractice = null;
+    let todayProgress = null;
+    let totalHearts = 0;
+
+    // ========== UI рендеринг ==========
+    const practiceListEl = document.getElementById('practiceList');
+    const totalHeartsEl = document.getElementById('totalHearts');
+
+    function renderPractices() {
+        practiceListEl.innerHTML = '';
+        practices.forEach(p => {
+            const done = todayProgress.practices[p.key].done;
+            const percent = Math.min(100, (done / p.target) * 100);
+            const card = document.createElement('div');
+            card.className = 'practice-card';
+            card.innerHTML = `
+                <div class="practice-header">
+                    <span class="practice-name">${p.name}</span>
+                    <span class="practice-target">${done}/${p.target} ${p.unit}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:${percent}%;"></div>
+                </div>
+                <button class="add-btn" data-key="${p.key}">+ Добавить</button>
+            `;
+            card.querySelector('.add-btn').addEventListener('click', () => openAddModal(p));
+            practiceListEl.appendChild(card);
+        });
+    }
+
+    function updateHeartDisplay() {
+        totalHeartsEl.textContent = totalHearts;
+    }
+
+    // ========== Модальное окно ==========
+    const modal = document.getElementById('addModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const quickBtns = document.getElementById('modalQuickBtns');
+    const manualValue = document.getElementById('manualValue');
+    const unitLabel = document.getElementById('unitLabel');
+    const submitBtn = document.getElementById('submitAdd');
+
+    function openAddModal(practice) {
+        currentModalPractice = practice;
+        modalTitle.textContent = practice.name;
+        unitLabel.textContent = practice.unit;
+        manualValue.value = '';
+        quickBtns.innerHTML = '';
+
+        if (practice.type === 'time') {
+            [5, 15, 30, 60].forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-btn';
+                btn.textContent = `+${val} мин`;
+                btn.onclick = () => { manualValue.value = parseInt(manualValue.value||0) + val; };
+                quickBtns.appendChild(btn);
+            });
+        } else {
+            [1, 5, 10, 54].forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-btn';
+                btn.textContent = `+${val}`;
+                btn.onclick = () => { manualValue.value = parseInt(manualValue.value||0) + val; };
+                quickBtns.appendChild(btn);
+            });
+        }
+        modal.classList.add('active');
+        manualValue.focus();
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+        currentModalPractice = null;
+    }
+
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    submitBtn.addEventListener('click', async () => {
+        if (!currentModalPractice) return;
+        let amount = parseInt(manualValue.value);
+        if (isNaN(amount) || amount <= 0) return;
+
+        const key = currentModalPractice.key;
+        todayProgress.practices[key].done += amount;
+        const done = todayProgress.practices[key].done;
+        const target = currentModalPractice.target;
+
+        // проверка на достижение 100% и не получено ли уже сердце
+        if (done >= target && !todayProgress.heartsEarned[key]) {
+            todayProgress.heartsEarned[key] = true;
+            totalHearts = await incrementTotalHearts();
+            updateHeartDisplay();
+            // анимация
+            animateHeart();
+        }
+
+        await saveDailyProgress(todayProgress);
+        renderPractices();
+        closeModal();
+    });
+
+    // ========== Анимация сердца ==========
+    function animateHeart() {
+        const heart = document.createElement('div');
+        heart.className = 'flying-heart';
+        heart.textContent = '💚';
+        heart.style.left = '50%';
+        heart.style.top = '70%';
+        heart.style.transform = 'translate(-50%, -50%) scale(1.2)';
+        document.body.appendChild(heart);
+
+        requestAnimationFrame(() => {
+            heart.style.top = '5%';
+            heart.style.left = '85%';
+            heart.style.transform = 'translate(-50%, -50%) scale(0.8)';
+            heart.style.opacity = '0.9';
+        });
+
+        setTimeout(() => {
+            heart.remove();
+        }, 900);
+    }
+
+    // ========== Статистика ==========
+    const statsContent = document.getElementById('statsContent');
+    let currentPeriod = 'day';
+
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPeriod = btn.dataset.period;
+            renderStats();
+        });
+    });
+
+    async function renderStats() {
+        if (currentPeriod === 'day') {
+            const p = todayProgress;
+            let html = '<h3>Сегодня</h3>';
+            practices.forEach(pr => {
+                const done = p.practices[pr.key].done;
+                const percent = Math.min(100, (done/pr.target)*100).toFixed(0);
+                const heart = p.heartsEarned[pr.key] ? '💚' : '🤍';
+                html += `<p>${heart} ${pr.name}: ${done}/${pr.target} ${pr.unit} (${percent}%)</p>`;
+            });
+            statsContent.innerHTML = html;
+        } else if (currentPeriod === 'week') {
+            const days = [];
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                days.push(d.toISOString().slice(0,10));
+            }
+            const weekData = await Promise.all(days.map(date => getDailyProgress(date)));
+            let maxHearts = 0;
+            const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+            const bars = weekData.map((day, idx) => {
+                const hearts = Object.values(day.heartsEarned).filter(Boolean).length;
+                if (hearts > maxHearts) maxHearts = hearts;
+                const date = new Date(days[idx]);
+                return { label: dayNames[date.getDay()], hearts };
+            });
+            const maxH = Math.max(1, maxHearts);
+            let html = '<div class="week-chart">';
+            bars.forEach(b => {
+                const heightPercent = (b.hearts / 4) * 100;
+                html += `<div class="bar-col"><span>${b.hearts}</span><div class="bar" style="height:${heightPercent}%;"></div><span>${b.label}</span></div>`;
+            });
+            html += '</div>';
+            statsContent.innerHTML = html;
+        } else if (currentPeriod === 'month') {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const daysInMonth = new Date(year, month+1, 0).getDate();
+            const dates = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                dates.push(`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+            }
+            const monthData = await Promise.all(dates.map(date => getDailyProgress(date)));
+            let html = '<div class="month-grid">';
+            monthData.forEach((day, i) => {
+                const hearts = Object.values(day.heartsEarned).filter(Boolean).length;
+                const bg = hearts === 4 ? '#c8e6c9' : hearts > 0 ? '#e8f5e9' : '#fff';
+                const dateNum = i+1;
+                html += `<div class="month-cell" style="background:${bg}">${dateNum}<br>${hearts>0?'💚':''}</div>`;
+            });
+            html += '</div>';
+            statsContent.innerHTML = html;
+        }
+    }
+
+    // ========== Инициализация ==========
+    async function init() {
+        await openDB();
+        totalHearts = await getTotalHearts();
+        todayProgress = await getDailyProgress(getTodayDate());
+        updateHeartDisplay();
+        renderPractices();
+
+        // переключение вкладок
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(tab.dataset.view === 'today' ? 'todayView' : 'statsView').classList.add('active');
+                if (tab.dataset.view === 'stats') renderStats();
+            });
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>
